@@ -1,0 +1,9 @@
+# datasets
+*.csv
+TMDB_movie_dataset_v11.csv
+
+# Ignore virtual environment
+venv/
+
+# Ignore cache
+__pycache__/

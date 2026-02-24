@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Movie Recommender</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .genres {
+            margin-top: 15px;
+        }
+
+        .genres label {
+            margin-right: 10px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .result-card {
+            background: white;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 6px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        .meta {
+            font-size: 14px;
+            color: gray;
+        }
+
+        .similarity {
+            font-weight: bold;
+            color: darkblue;
+        }
+
+        a {
+            text-decoration: none;
+            color: darkgreen;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Movie Recommendation System</h1>
+
+    <textarea id="user_text" rows="3" placeholder="Describe a movie you want..."></textarea>
+
+    <div class="genres">
+        <h3>Select Genres</h3>
+
+        <!-- Add or remove genres as you like -->
+        <label><input type="checkbox" value="Action"> Action</label>
+        <label><input type="checkbox" value="Romance"> Romance</label>
+        <label><input type="checkbox" value="Drama"> Drama</label>
+        <label><input type="checkbox" value="Comedy"> Comedy</label>
+        <label><input type="checkbox" value="Thriller"> Thriller</label>
+        <label><input type="checkbox" value="Science Fiction"> Science Fiction</label>
+    </div>
+
+    <button onclick="getRecommendations()">Recommend</button>
+
+    <div id="results"></div>
+
+</div>
+
+<script>
+async function getRecommendations() {
+
+    const userText = document.getElementById("user_text").value;
+
+    const selectedGenres = Array.from(
+        document.querySelectorAll('input[type="checkbox"]:checked')
+    ).map(cb => cb.value);
+
+    const response = await fetch("/recommend", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            user_text: userText,
+            selected_genres: selectedGenres
+        })
+    });
+
+    const data = await response.json();
+
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = "";
+
+    if (data.length === 0) {
+        resultsDiv.innerHTML = "<p>No recommendations found.</p>";
+        return;
+    }
+
+    data.forEach(movie => {
+
+        let homepageLink = "";
+        if (movie.homepage && movie.homepage !== "") {
+            homepageLink = `<p><a href="${movie.homepage}" target="_blank">Official Website</a></p>`;
+        }
+
+        resultsDiv.innerHTML += `
+            <div class="result-card">
+                <h3>${movie.title} (${movie.release_year})</h3>
+                <div class="meta">
+                    ${movie.genres} | Language: ${movie.original_language} | Popularity: ${movie.popularity}
+                </div>
+                <p>${movie.overview}</p>
+                <p class="similarity">Similarity: ${movie.similarity_percent}%</p>
+                ${homepageLink}
+            </div>
+        `;
+    });
+}
+</script>
+
+</body>
+</html>
