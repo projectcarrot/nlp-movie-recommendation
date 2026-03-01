@@ -1,9 +1,16 @@
 # datasets
 *.csv
 TMDB_movie_dataset_v11.csv
+TMDB_all_movies.csv
+imdb-dataset/
 
 # Ignore virtual environment
 venv/
 
 # Ignore cache
 __pycache__/
+.ipynb_checkpoints/
+
+# OS / editor noise
+.DS_Store
+.vscode/

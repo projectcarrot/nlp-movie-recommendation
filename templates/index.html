@@ -3,63 +3,155 @@
 <head>
     <title>Movie Recommender</title>
     <style>
+        :root {
+            --bg: #0b0c10;
+            --bg-soft: #12141a;
+            --card: #191c24;
+            --line: #2b3040;
+            --text: #e8ecf3;
+            --muted: #9ca6bb;
+            --accent: #59b3ff;
+            --accent-soft: rgba(89, 179, 255, 0.16);
+            --ok: #5fd3a3;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f4f4f4;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            margin: 0;
+            padding: 32px 20px 48px;
+            background: #000;
+            color: var(--text);
         }
 
         h1 {
             text-align: center;
+            font-size: 42px;
+            letter-spacing: 0.4px;
+            margin: 6px 0 24px;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 980px;
             margin: auto;
+            padding: 10px 6px;
         }
 
         textarea {
             width: 100%;
-            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--line);
+            background: #0b0d12;
+            color: var(--text);
+            padding: 14px;
             font-size: 16px;
+            min-height: 110px;
+            resize: vertical;
         }
 
-        .genres {
-            margin-top: 15px;
+        textarea::placeholder {
+            color: var(--muted);
+        }
+
+        .section {
+            margin-top: 18px;
+        }
+
+        .section h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .genres-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 14px;
         }
 
         .genres label {
-            margin-right: 10px;
+            font-size: 18px;
+            color: #d8dfef;
+            user-select: none;
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        #sort_by {
+            background: var(--bg-soft);
+            color: var(--text);
+            border: 1px solid var(--line);
+            padding: 10px 12px;
+            font-size: 16px;
         }
 
         button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 11px 22px;
+            font-size: 17px;
+            border: 1px solid var(--line);
+            color: var(--text);
+            background: #121722;
+            font-weight: 600;
             cursor: pointer;
+            transition: background-color 120ms ease;
+        }
+
+        button:hover {
+            background: #1a2030;
         }
 
         .result-card {
-            background: white;
-            padding: 15px;
+            background: #0f131b;
+            border: 1px solid var(--line);
+            padding: 18px;
             margin-top: 20px;
-            border-radius: 6px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        .result-card h3 {
+            margin: 0 0 10px;
+            font-size: 26px;
         }
 
         .meta {
             font-size: 14px;
-            color: gray;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .result-card p {
+            font-size: 14px;
+            line-height: 1.45;
         }
 
         .similarity {
             font-weight: bold;
-            color: darkblue;
+            color: var(--accent);
+            font-size: 18px;
         }
 
         a {
             text-decoration: none;
-            color: darkgreen;
+            color: var(--ok);
+            font-weight: 600;
+        }
+
+        @media (max-width: 700px) {
+            h1 {
+                font-size: 32px;
+            }
+            .genres label {
+                font-size: 16px;
+            }
+            .result-card h3 {
+                font-size: 22px;
+            }
+            .similarity {
+                font-size: 17px;
+            }
         }
     </style>
 </head>
@@ -69,27 +161,70 @@
 
     <h1>Movie Recommendation System</h1>
 
-    <textarea id="user_text" rows="3" placeholder="Describe a movie you want..."></textarea>
+    <textarea id="user_text" rows="3" placeholder="Describe a movie or a genre you want..."></textarea>
 
-    <div class="genres">
+    <div class="section">
         <h3>Select Genres</h3>
 
-        <!-- Add or remove genres as you like -->
-        <label><input type="checkbox" value="Action"> Action</label>
-        <label><input type="checkbox" value="Romance"> Romance</label>
-        <label><input type="checkbox" value="Drama"> Drama</label>
-        <label><input type="checkbox" value="Comedy"> Comedy</label>
-        <label><input type="checkbox" value="Thriller"> Thriller</label>
-        <label><input type="checkbox" value="Science Fiction"> Science Fiction</label>
+        <div class="genres-grid">
+            <label><input type="checkbox" value="Action"> Action</label>
+            <label><input type="checkbox" value="Adventure"> Adventure</label>
+            <label><input type="checkbox" value="Animation"> Animation</label>
+            <label><input type="checkbox" value="Comedy"> Comedy</label>
+            <label><input type="checkbox" value="Crime"> Crime</label>
+            <label><input type="checkbox" value="Documentary"> Documentary</label>
+            <label><input type="checkbox" value="Drama"> Drama</label>
+            <label><input type="checkbox" value="Family"> Family</label>
+            <label><input type="checkbox" value="Fantasy"> Fantasy</label>
+            <label><input type="checkbox" value="History"> History</label>
+            <label><input type="checkbox" value="Horror"> Horror</label>
+            <label><input type="checkbox" value="Music"> Music</label>
+            <label><input type="checkbox" value="Mystery"> Mystery</label>
+            <label><input type="checkbox" value="Romance"> Romance</label>
+            <label><input type="checkbox" value="Science Fiction"> Science Fiction</label>
+            <label><input type="checkbox" value="TV Movie"> TV Movie</label>
+            <label><input type="checkbox" value="Thriller"> Thriller</label>
+            <label><input type="checkbox" value="War"> War</label>
+            <label><input type="checkbox" value="Western"> Western</label>
+        </div>
     </div>
 
-    <button onclick="getRecommendations()">Recommend</button>
+    <div class="controls-row">
+        <select id="sort_by">
+            <option value="balanced" selected>Balanced (Similarity + Quality)</option>
+            <option value="similarity">Similarity</option>
+            <option value="popularity">Popularity</option>
+            <option value="imdb_rating">IMDb Rating</option>
+            <option value="release_date">Release Date (Newest)</option>
+        </select>
+
+        <button onclick="getRecommendations()">Recommend</button>
+    </div>
 
     <div id="results"></div>
 
 </div>
 
 <script>
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function safeHomepageLink(url) {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+            return parsed.href;
+        }
+    } catch (_) {}
+    return "";
+}
+
 async function getRecommendations() {
 
     const userText = document.getElementById("user_text").value;
@@ -97,22 +232,33 @@ async function getRecommendations() {
     const selectedGenres = Array.from(
         document.querySelectorAll('input[type="checkbox"]:checked')
     ).map(cb => cb.value);
-
-    const response = await fetch("/recommend", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            user_text: userText,
-            selected_genres: selectedGenres
-        })
-    });
-
-    const data = await response.json();
+    const sortBy = document.getElementById("sort_by").value;
 
     const resultsDiv = document.getElementById("results");
     resultsDiv.innerHTML = "";
+    let data = [];
+
+    try {
+        const response = await fetch("/recommend", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user_text: userText,
+                selected_genres: selectedGenres,
+                sort_by: sortBy
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+        data = await response.json();
+    } catch (_) {
+        resultsDiv.innerHTML = "<p>Could not fetch recommendations right now. Please try again.</p>";
+        return;
+    }
 
     if (data.length === 0) {
         resultsDiv.innerHTML = "<p>No recommendations found.</p>";
@@ -122,18 +268,19 @@ async function getRecommendations() {
     data.forEach(movie => {
 
         let homepageLink = "";
-        if (movie.homepage && movie.homepage !== "") {
-            homepageLink = `<p><a href="${movie.homepage}" target="_blank">Official Website</a></p>`;
+        const safeHomepage = safeHomepageLink(movie.homepage);
+        if (safeHomepage !== "") {
+            homepageLink = `<p><a href="${safeHomepage}" target="_blank" rel="noopener noreferrer">Official Website</a></p>`;
         }
 
         resultsDiv.innerHTML += `
             <div class="result-card">
-                <h3>${movie.title} (${movie.release_year})</h3>
+                <h3>${escapeHtml(movie.title)} (${escapeHtml(movie.release_year)})</h3>
                 <div class="meta">
-                    ${movie.genres} | Language: ${movie.original_language} | Popularity: ${movie.popularity}
+                    ${escapeHtml(movie.genres)} | Language: ${escapeHtml(movie.original_language)} | Popularity: ${escapeHtml(movie.popularity)} | IMDb: ${escapeHtml(movie.imdb_rating)}
                 </div>
-                <p>${movie.overview}</p>
-                <p class="similarity">Similarity: ${movie.similarity_percent}%</p>
+                <p>${escapeHtml(movie.overview)}</p>
+                <p class="similarity">Similarity: ${escapeHtml(movie.similarity_percent)}%</p>
                 ${homepageLink}
             </div>
         `;
