@@ -9,8 +9,6 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
-
-# Recommendation endpoint
 @app.route("/recommend", methods=["POST"])
 def recommend():
     data = request.get_json(silent=True) or {}
@@ -43,7 +41,6 @@ def recommend():
         sort_by=sort_by
     )
 
-    # Convert DataFrame to JSON
     results = results_df.to_dict(orient="records")
 
     return jsonify(results)

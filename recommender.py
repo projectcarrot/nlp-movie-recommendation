@@ -7,14 +7,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 data_path = "TMDB_all_movies.csv"
 EMBEDDING_CACHE_MAX_SIZE = 50000
 
+# Columns expected from the CSV source
 cols = [
     "id", "title", "release_date", "original_language", "overview",
     "genres", "popularity", "tagline", "cast", "imdb_rating",
     "poster_path", "vote_count", "homepage", "keywords"
 ]
 
+# Load only required columns to keep memory usage manageable
 def load_dataset(path: str, use_columns: list[str]) -> pd.DataFrame:
-    # Read only needed columns to reduce memory and startup time.
     header = pd.read_csv(path, nrows=0)
     available = [c for c in use_columns if c in header.columns]
     df = pd.read_csv(path, usecols=available)
@@ -25,6 +26,7 @@ def load_dataset(path: str, use_columns: list[str]) -> pd.DataFrame:
 
 use_cols = load_dataset(data_path, cols).copy()
 
+# Basic null handling and numeric/date normalization
 str_cols = ["title", "overview", "tagline", "genres", "cast", "keywords", "poster_path", "homepage"]
 for c in str_cols:
     use_cols[c] = use_cols[c].fillna("")
@@ -38,6 +40,7 @@ use_cols["popularity"] = pd.to_numeric(use_cols["popularity"], errors="coerce").
 use_cols["vote_count"] = pd.to_numeric(use_cols["vote_count"], errors="coerce").fillna(0.0)
 use_cols["imdb_rating"] = pd.to_numeric(use_cols["imdb_rating"], errors="coerce").fillna(0.0)
 
+# Text cleanup used by both movie fields and user queries
 def clean_text(text):
     text = text.lower()
     text = re.sub(r"[^a-z0-9\s]", " ", text)
@@ -71,6 +74,7 @@ use_cols["genre_text"] = use_cols["genre_list"].apply(lambda xs: " ".join(xs))
 use_cols["keyword_text"] = use_cols["keyword_list"].apply(lambda xs: " ".join(xs))
 use_cols["cast_text"] = use_cols["cast_list"].apply(lambda xs: " ".join(xs))
 
+# Heuristics for filtering noisy/low-quality records
 LOW_QUALITY_OVERVIEWS = {
     "plot tba",
     "tba",
@@ -113,7 +117,6 @@ def repeat_text(text, n):
     return " ".join([t] * n)
 
 def build_combined_text(row):
-    # Balance text influence so title does not dominate query matching.
     parts = [
         repeat_text(row["title_clean"], TEXT_WEIGHTS["title"]),
         repeat_text(row["overview_clean"], TEXT_WEIGHTS["overview"]),
@@ -221,7 +224,6 @@ def is_name_like_query(text):
     tokens = [t for t in (text or "").split() if t]
     if len(tokens) < 2 or len(tokens) > 4:
         return False
-    # Person-name queries are usually short alphabetic tokens.
     return all(re.fullmatch(r"[a-z]+", t) for t in tokens)
 
 def cast_query_match_score(cast_list, query_text):
@@ -317,19 +319,18 @@ def recommend_movies(user_text, selected_genres=None, top_n=10, K=200,
         out = out.head(top_n)
         return out.reset_index(drop=True)
 
-    # 1.5) Quality filter: remove low-information movies first.
+    # Quality filter: remove low-quality movies first.
     quality_mask = np.array([bool(use_cols.iloc[i]["quality_ok"]) for i in cand_idx], dtype=bool)
     if quality_mask.any():
         cand_idx = list(np.array(cand_idx)[quality_mask])
         cand_tfidf_scores = np.array(cand_tfidf_scores)[quality_mask]
     else:
-        # Softer fallback: require only decent overview text.
         overview_mask = np.array([bool(use_cols.iloc[i]["has_good_overview"]) for i in cand_idx], dtype=bool)
         if overview_mask.any():
             cand_idx = list(np.array(cand_idx)[overview_mask])
             cand_tfidf_scores = np.array(cand_tfidf_scores)[overview_mask]
 
-    # 2) Optional hard genre filter on candidates
+    # Optional hard genre filter on candidates
     if use_genre_filter and selected_genres:
         mask = []
         sg = set([g.strip().lower() for g in selected_genres])
@@ -341,18 +342,16 @@ def recommend_movies(user_text, selected_genres=None, top_n=10, K=200,
         cand_idx = list(np.array(cand_idx)[mask])
         cand_tfidf_scores = np.array(cand_tfidf_scores)[mask]
 
-        # if filter becomes too strict, fallback to no filter
         if len(cand_idx) == 0:
             cand_idx, cand_tfidf_scores = topk_candidates(user_text_clean, K=K)
 
-    # 2.3) For general text queries, prefer mainstream candidates if enough exist.
     if (not name_query) and user_text_clean:
         mainstream_mask = np.array([bool(use_cols.iloc[i]["mainstream_ok"]) for i in cand_idx], dtype=bool)
         if mainstream_mask.sum() >= max(top_n * 3, 30):
             cand_idx = list(np.array(cand_idx)[mainstream_mask])
             cand_tfidf_scores = np.array(cand_tfidf_scores)[mainstream_mask]
 
-    # 2.5) If the query looks like a person name, prefer real cast matches.
+    # If the query looks like a person name, prefer real cast matches.
     cast_scores = np.array([
         cast_query_match_score(use_cols.iloc[i]["cast_list"], user_text_clean)
         for i in cand_idx
@@ -372,7 +371,7 @@ def recommend_movies(user_text, selected_genres=None, top_n=10, K=200,
         out = out.head(top_n)
         return out.reset_index(drop=True)
 
-    # 3) SBERT reranking on candidates ONLY
+    # SBERT reranking on candidates ONLY
     # If user_text is empty, rerank using genre query
     sbert_query = user_text_clean if user_text_clean else " ".join([g.strip().lower() for g in selected_genres])
     if sbert is None:
@@ -382,7 +381,7 @@ def recommend_movies(user_text, selected_genres=None, top_n=10, K=200,
         cand_embs = _get_cached_candidate_embeddings(cand_idx)
         sbert_scores = cos_sim(query_emb, cand_embs).ravel()  # ~0..1
 
-    # 4) Genre score + popularity score (for candidates)
+    # Genre score + popularity score (for candidates)
     genre_scores = np.array([
         genre_match_score(use_cols.iloc[i]["genre_list"], selected_genres)
         for i in cand_idx
@@ -403,7 +402,7 @@ def recommend_movies(user_text, selected_genres=None, top_n=10, K=200,
             for i in cand_idx
         ], dtype=float)
 
-    # 5) Normalize TF-IDF candidate scores (they're already 0..1-ish, but normalize for stable mixing)
+    # Normalize TF-IDF candidate scores 
     tfidf_scores = normalize01(cand_tfidf_scores)
 
     # 6) Final combined score

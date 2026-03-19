@@ -14,3 +14,7 @@ __pycache__/
 # OS / editor noise
 .DS_Store
 .vscode/
+
+# Ignore Old Jupyter Notebook 
+MovieRecommendation.ipynb
+recommender.ipynb
